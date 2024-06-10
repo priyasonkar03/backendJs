@@ -52,7 +52,7 @@ userSchema.pre("save",async function(next) {
     //This logic used for password encryption
     if(!this.isModified("password")) return next();
     
-    this.password = bcrypt.hash(this.password, 10)
+    this.password = await bcrypt.hash(this.password, 10)
     next()
 })
 
