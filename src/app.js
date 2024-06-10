@@ -14,4 +14,11 @@ app.use(express.urlencoded({extended:true, limit:"16kb"}))
 app.use(express.static("public"))   //public used for image icon
 app.use(cookieParser())
 
+
+//routes import 
+import userRouter from "./routes/user.routes.js"
+
+//routes declaration
+app.use("/api/v1/users", userRouter)       //right the middleware
+
 export { app }
