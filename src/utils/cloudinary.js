@@ -18,7 +18,8 @@ const uploadOnCloudinary = async(localFilePath) =>{
             resource_type : "auto"
         })
         //File has been uploaded successfull
-        console.log("file is uploaded on clodinary", response.url);
+        //console.log("file is uploaded on clodinary", response.url);
+        fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
         fs.unlinkSync(localFilePath)    //remove the locally saved 

@@ -1,9 +1,9 @@
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
 import {User} from "../models/user.model.js";
-import {uploadOnCloudinary} from "../utils/cloudinary.js"
+import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import multer from "multer"
 const registerUser = asyncHandler(async (req,res) => {
     // res.status(200).json({
     //     message: "Radhe Shyam"
@@ -36,9 +36,9 @@ const registerUser = asyncHandler(async (req,res) => {
     }
     //==============third step check ther user already exits
     // user hi call karega mongodb ko direct 
-   const existedUser = User.findOne({
+   const existedUser = await User.findOne({
         //here used operators by $
-        $or : [{username}, {email}]
+        $or : [{ username }, { email }]
         
     })
     if(existedUser){
@@ -46,7 +46,13 @@ const registerUser = asyncHandler(async (req,res) => {
     }
     //============fourth step for avatar
     const avatarLocalPath = req.files?.avatar[0]?.path;
-    const coverImageLocalPath = req.files?.coverImage[0]?.path;
+    //const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+    let coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
+        coverImageLocalPath = req.files.coverImage[0].path
+    }
+    
     
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar file is required")
