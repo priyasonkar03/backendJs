@@ -9,7 +9,7 @@ import fs from "fs"
 });
 
 
-const uploadOnCloudinary = async(localFilePath) =>{
+const uploadOnCloudinary = async (localFilePath) =>{
     try {
         if(!localFilePath) return null
         //upload the file on cloudinary
@@ -18,8 +18,8 @@ const uploadOnCloudinary = async(localFilePath) =>{
             resource_type : "auto"
         })
         //File has been uploaded successfull
-        //console.log("file is uploaded on clodinary", response.url);
-        fs.unlinkSync(localFilePath)
+        console.log("file is uploaded on clodinary", response.url);
+        // fs.unlinkSync(localFilePath)
         return response;
     } catch (error) {
         fs.unlinkSync(localFilePath)    //remove the locally saved 

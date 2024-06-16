@@ -6,7 +6,7 @@ import bcrypt from "bcrypt"
 const userSchema = new Schema({
     username:{
         type : String,
-        require: true,
+        required: true,
         unique: true,
         lowercase: true,
         trim: true,
@@ -14,20 +14,20 @@ const userSchema = new Schema({
     },
     email:{
         type : String,
-        require: true,
+        required: true,
         unique: true,
         lowercase: true,
         trim: true,
     },
     fullName:{
         type : String,
-        require: true,
+        required: true,
         trim: true,
         index: true
     },
     avatar:{
         type : String,      //cloudinary url
-        require: true,
+        required: true,
     },
     coverImage:{
         type : String, //cloudinary url
@@ -45,10 +45,11 @@ const userSchema = new Schema({
     refreshToken:{
         type : String
     }
-},{timestamps:true})
+},
+{timestamps:true})
 //===========Password===============
 //use pre hooks  for middlewar
-userSchema.pre("save",async function(next) {
+userSchema.pre("save", async function(next) {
     //This logic used for password encryption
     if(!this.isModified("password")) return next();
     

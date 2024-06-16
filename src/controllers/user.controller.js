@@ -1,9 +1,10 @@
 import {asyncHandler} from "../utils/asyncHandler.js";
 import {ApiError} from "../utils/ApiError.js";
-import {User} from "../models/user.model.js";
+import { User} from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
-import multer from "multer"
+import { uploadFields } from "../middlewares/multer.middleware.js"
+// import multer from "multer"
 const registerUser = asyncHandler(async (req,res) => {
     // res.status(200).json({
     //     message: "Radhe Shyam"
@@ -45,35 +46,40 @@ const registerUser = asyncHandler(async (req,res) => {
         throw new ApiError(409, "User with email or username already exits")
     }
     //============fourth step for avatar
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    // const avatarlocalPath = req.files?.avatar[0]?.path;
     //const coverImageLocalPath = req.files?.coverImage[0]?.path;
-
-    let coverImageLocalPath;
+    
+    let avatarLocalPath , coverImageLocalPath;
+    if (req.files && Array.isArray(req.files.avatar) && req.files.avatar.length > 0) {
+        avatarLocalPath = req.files.avatar[0].path;
+    }
     if (req.files && Array.isArray(req.files.coverImage) && req.files.coverImage.length > 0) {
         coverImageLocalPath = req.files.coverImage[0].path
     }
-    
-    
+
     if(!avatarLocalPath){
         throw new ApiError(400, "Avatar file is required")
     }
-    //===========fifth steps=upload on clodinary 
+    
+    
+    //===========5) steps=upload on clodinary 
     const avatar = await uploadOnCloudinary(avatarLocalPath)
     const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-
     if(!avatar){
         throw new ApiError(400, "Avatar file is required")
     }
-    //==========sixth step create the object and store the data on database
+ 
+   //==========step 6) create the object and store the data on database
     const user = await User.create({
         fullName,
-        avatar: avatar.url,
+        avatar : avatar.url,
         coverImage : coverImage?.url || "",         //conner case (if coverimg then passed url otherwise empty)
         email,
         password,
         username:username.toLowerCase()
     })
-    // 7)remove password and refresh token field from response
+
+    // 7) remove password and refresh token field from response
     const createdUser = await User.findById(user._id).select(
         //- ve sign used for password nhi chiye in this case used beared syntax (-password -refreshToken)
         "-password -refreshToken"
@@ -89,4 +95,5 @@ const registerUser = asyncHandler(async (req,res) => {
     )
 })
 
-export {registerUser}
+export { registerUser,}
+
