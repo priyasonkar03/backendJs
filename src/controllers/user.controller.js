@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User} from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import jwt from 'jsonwebtoken'
 // import { uploadFields } from "../middlewares/multer.middleware.js"
 // import multer from "multer"
 
@@ -41,7 +41,7 @@ const generateAccessAndRefereshTokens = async (userId) => {
 };
 
 
-
+//--------User Register-------------
 const registerUser = asyncHandler(async (req,res) => {
     // res.status(200).json({
     //     message: "Radhe Shyam"
@@ -132,7 +132,6 @@ const registerUser = asyncHandler(async (req,res) => {
     )
 })
 
-
 //--------Login -------------
 const loginUser = asyncHandler(async (req, res) => {
     //req body --> data
@@ -191,31 +190,9 @@ const loginUser = asyncHandler(async (req, res) => {
     )
 })
 
-//User logout
-// const logoutUser = asyncHandler(async(req, res) => {
-//     User.findByIdAndUpdate(
-//         {
-//             $set : {
-//                 refreshToken : undefined
-//             }
-//         },
-//         {
-//             new: true
-//         }
-//     )
-//     const options = {
-//         httpOnly : true,
-//         secure: true
-//     }
-
-//     return res
-//     .status(200)
-//     .clearCookie("accessToken", options)
-//     .clearCookie("refreshToken", options)
-//     .json(new ApiResponse(200, {}, "User logged out"))
-// })
+//---------User logout---------
 const logoutUser = asyncHandler(async(req, res) => {
-    await User.findByIdAndUpdate(
+    await User.findByIdAndUpdate(               //mistack here await not use in my code
         req.user._id,
         {
             $set: {
@@ -239,10 +216,59 @@ const logoutUser = asyncHandler(async(req, res) => {
     .json(new ApiResponse(200, {}, "User logged Out"))
 })
 
+//---------------End point where user for refreshaccesstoken 
+const refreshAccessToken = asyncHandler(async(req, res) => {
+
+   const incomingRefreshToken = req.cookies.refreshToken || req.body.refreshToken
+
+   if(incomingRefreshToken){
+    throw new ApiError(401, "Unauthorized request")
+   }
+
+   //=========token verify by jsonwebtoken
+ try {
+      const decodedToken = jwt.verify(
+       incomingRefreshToken,
+       process.env.REFRESH_TOKEN_SECRET
+      )
+      
+       //------find by id from mongodb
+       const user = await User.findById(decodedToken?._id)
+   
+       if(!user){
+           throw new ApiError (401, "Invalid refresh token")
+       }
+   
+       if(incomingRefreshToken !== user?.refreshToken){
+           throw new ApiError (401, "Refresh token is expired or used")
+       }
+   
+       const options = {
+           httpOnly: true,
+           secure: true
+       }
+       const {accessToken, newrefreshToken} = await generateAccessAndRefereshTokens(user._id)
+   
+       return res
+       .status(200)
+       .cookie("accessToken", accessToken, options)
+       .cookie("refreshToken", newrefreshToken, options)
+       .json(
+           new ApiResponse(
+               200,
+               {accessToken, newrefreshToken},
+               "Access token refreshed"
+           )
+       )
+    } catch (error) {
+        throw new ApiError(401, error?.message || "Invalid refresh token")
+    }   
+})
 
 export { 
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser,
+    refreshAccessToken
 }
 
