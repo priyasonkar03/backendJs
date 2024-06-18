@@ -49,7 +49,7 @@ const userSchema = new Schema({
 {timestamps:true})
 //===========Password===============
 //use pre hooks  for middlewar
-userSchema.pre("save", async function(next) {
+userSchema.pre("save", async function (next) {
     //This logic used for password encryption
     if(!this.isModified("password")) return next();
     
