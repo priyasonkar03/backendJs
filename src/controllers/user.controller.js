@@ -289,7 +289,8 @@ const changeCurrentPassword = asyncHandler(async(req,res)=> {
 const getCurrentUser = asyncHandler(async(req, res) => {
     return res
     .status(200)
-    .json(200, req.user, "Current user fetched successfully")
+    .json(
+       new ApiResponse (200, req.user, "Current user fetched successfully"))
 });
 
 //=========update user account details============
@@ -304,7 +305,7 @@ const updateAccountDetails = asyncHandler(async(req, res) =>{
         {
             //user mongoose operator $set
             $set:{
-                fullName : fullName,
+                fullName,
                 email : email
             }
         },
@@ -342,7 +343,7 @@ const updateUserAvatar = asyncHandler(async(req, res)=>{
     return res
     .status(200)
     .json(
-        new ApiError(200, user, "Cover image updated successfully")
+        new ApiResponse(200, user, "Cover image updated successfully")
     )
 })
 //========Update user's coverimage
@@ -372,9 +373,84 @@ const updateUserCoverImage = asyncHandler(async(req, res)=>{
     return res
     .status(200)
     .json(
-        new ApiError(200, user, "Cover image updated successfully")
+        new ApiResponse(200, user, "Cover image updated successfully")
     )
 })
+//==========Get user channel
+const getUserChannelProfile = asyncHandler(async(req, res)=>{
+    const {username} = req.params       //params used for fillter
+
+    if(!username?.trim()){
+        throw new ApiError(400, "username is missing")
+    }
+//used aggregration pipeline
+    const channel = await User.aggregate([
+        {
+            $match :{       //first pipeline
+                username : username?.toLowerCase()
+            }
+        },
+        {
+            $lookup:{           //find the subscriber (aggregrate pipeline)
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "channel",
+                as :"subscribers"
+            }
+        },
+        {
+            $lookup: {          //find the subscribed(aggregrate pipeline)
+                from : "subscriptions",
+                localField : "_id",
+                foreignField : "subscriber",
+                as :"subscribedTo"
+            }
+        },
+        {   //add fields on users
+            $addFields : {            //calculate the subscribers
+                subscribersCount : {
+                    $size : "$subscribers"
+                },
+                channelsSubscribedToCount :{
+                    $size : "$subscribedTo"
+                },
+                isSubscribed : {
+                    $cond :{
+                        // in means present or not 
+                        if : {$in : [req.user?._id, "$subscribers.subcriber"]},              //$in used operation array and object both calculate
+                        then : true,
+                        else : false
+                    }
+                }
+            }
+        },
+        {
+            $project :{
+                fullName:1,
+                username : 1,
+                subscribersCount:1,
+                channelsSubscribedToCount:1,
+                isSubscribed:1,
+                avatar:1,
+                coverImage:1,
+                email: 1
+            }
+        }
+    ])
+    if(!channel?.length){
+        throw new ApiError(400,"channel does not exists")
+    }
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200, channel[0], "User channe; fetched successfully")
+    )
+})
+
+    
+
+
+
 export { 
     registerUser,
     loginUser,
@@ -384,6 +460,7 @@ export {
     getCurrentUser,
     updateAccountDetails,
     updateUserAvatar,
-    updateUserCoverImage
+    updateUserCoverImage,
+    getUserChannelProfile
 }
 
